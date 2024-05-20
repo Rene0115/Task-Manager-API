@@ -16,4 +16,7 @@ export class updateTaskDto {
   @IsString()
   @IsOptional()
   readonly description: string;
+
+  @IsString()
+  readonly taskId: string;
 }

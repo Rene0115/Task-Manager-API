@@ -3,6 +3,7 @@ import {
   HttpException,
   NotFoundException,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import * as mongoose from 'mongoose';
 import { Task } from './task.schema';
@@ -70,6 +71,48 @@ export class TaskService {
 
   async updateTask(taskId: string, updateData: object, userId: string) {
     try {
+      const task = await this.taskModel.findOne({
+        _id: taskId,
+        userId: userId,
+      });
+      if (!task) {
+        throw new NotFoundException('Invalid Task ID');
+      }
+
+      const newTask = await this.taskModel.findOneAndUpdate(
+        { _id: taskId, userId: userId },
+        updateData,
+        { new: true },
+      );
+      return {
+        success: true,
+        task: newTask,
+      };
+    } catch (error: any) {
+      console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
+  }
+
+  async getTaskById(taskId: string, userId: string) {
+    if (!taskId) throw new BadRequestException('Invalid task id');
+
+    const task = await this.taskModel.findOne({ _id: taskId, userId: userId });
+    if (!task) throw new BadRequestException('Task not found');
+    return {
+      success: true,
+      task: task,
+    };
+  }
+
+  async deleteTask(taskId: string, userId: string) {
+    try {
       const task = await this.taskModel.findById(taskId);
       if (!task) {
         throw new NotFoundException('Invalid Task ID');
@@ -79,16 +122,12 @@ export class TaskService {
         throw new UnauthorizedException('Invalid Token');
       }
       if (task.userId !== user.id) {
-        throw new UnauthorizedException('Invalid Token');
+        throw new UnauthorizedException('You can only delete tasks you create');
       }
-      const newTask = await this.taskModel.updateOne(
-        { _id: taskId, userId: user.id },
-        updateData,
-        { new: true },
-      );
+      await this.taskModel.deleteOne({ _id: taskId, userId: user.id });
       return {
         success: true,
-        task: newTask,
+        message: `Task with Id : ${taskId} has been deleted `,
       };
     } catch (error: any) {
       console.log(error);

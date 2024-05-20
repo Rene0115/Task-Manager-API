@@ -1,4 +1,5 @@
 import { IsEmail, IsString, MinLength } from 'class-validator';
+import { Request } from 'express';
 
 export class SignupDto {
   @IsEmail()
@@ -15,4 +16,11 @@ export class LoginDto {
 
   @IsString()
   readonly password: string;
+}
+
+export interface UserRequest extends Request {
+  user?: {
+    id: string;
+    email: string;
+  };
 }
