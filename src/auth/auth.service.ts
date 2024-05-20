@@ -50,18 +50,32 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
-    const user = await this.userModel.findOne({ email }, '-password -__v');
-    if (!user) {
-      throw new NotFoundException('User not found');
+    try {
+      const user = await this.userModel.findOne({ email });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      const isPasswordValid = bcrypt.compareSync(password, user.password);
+      if (!isPasswordValid) {
+        throw new BadRequestException('Email or password is incorrect');
+      }
+      return {
+        success: true,
+        user: {
+          email: user.email,
+          id: user._id,
+        },
+        token: this.jwtService.sign({ email: user.email, id: user.id }),
+      };
+    } catch (error: any) {
+      console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        400,
+      );
     }
-    const isPasswordValid = bcrypt.compareSync(password, user.password);
-    if (!isPasswordValid) {
-      throw new BadRequestException('Email or password is incorrect');
-    }
-    return {
-      success: true,
-      user: user,
-      token: this.jwtService.sign({ email: user.email, id: user.id }),
-    };
   }
 }
