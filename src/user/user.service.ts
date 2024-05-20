@@ -28,4 +28,22 @@ export class UserService {
       );
     }
   }
+  async getUserById(id: string) {
+    try {
+      const user = await this.userModel.findOne({ _id: id }, '-password -__v');
+      return {
+        success: true,
+        user: user,
+      };
+    } catch (error: any) {
+      console.log(error);
+      throw new HttpException(
+        {
+          success: false,
+          message: error.message,
+        },
+        error.status,
+      );
+    }
+  }
 }
